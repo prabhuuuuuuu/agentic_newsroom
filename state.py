@@ -1,3 +1,4 @@
+# state.py
 from typing import TypedDict, Annotated, List
 import operator
 
@@ -7,3 +8,4 @@ class GraphState(TypedDict):
     draft: str
     critique: str
     revision_count: int
+    max_revisions: int  
