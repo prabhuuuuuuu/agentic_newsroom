@@ -4,7 +4,7 @@
 
 BeatNet is a deep learning pipeline for **automatic music genre classification** using audio feature extraction and hybrid neural architectures. The system combines **Convolutional Neural Networks (CNNs)** for spatial feature learning from spectrograms and **Bidirectional LSTMs (BiLSTM)** for modeling temporal dependencies in music signals.
 
-The goal is to classify audio tracks into musical genres using representations such as **Mel-Spectrograms and MFCCs**, which capture the frequency structure of sound signals in a way that approximates human auditory perception. ([Wikipedia][1])
+The goal is to classify audio tracks into musical genres using representations such as **Mel-Spectrograms and MFCCs**, which capture the frequency structure of sound signals in a way that approximates human auditory perception.
 
 ---
 
@@ -12,7 +12,7 @@ The goal is to classify audio tracks into musical genres using representations s
 
 Music genre classification is a common task in **Music Information Retrieval (MIR)**. It enables automated tagging, recommendation systems, music discovery, and audio indexing.
 
-Traditional audio classification approaches rely on handcrafted features, but deep learning models such as CNNs and RNNs can automatically learn hierarchical representations of audio signals. CNNs learn spatial patterns in spectrograms, while LSTM-based models capture temporal patterns across time frames. ([ResearchGate][2])
+Traditional audio classification approaches rely on handcrafted features, but deep learning models such as CNNs and RNNs can automatically learn hierarchical representations of audio signals. CNNs learn spatial patterns in spectrograms, while LSTM-based models capture temporal patterns across time frames. 
 
 BeatNet combines both approaches to build a hybrid architecture that captures **both spectral and temporal information**.
 
@@ -85,7 +85,7 @@ Genres include:
 * Reggae
 * Rock
 
-The GTZAN dataset is commonly used for benchmarking deep learning models for genre classification tasks. ([Kaggle][3])
+The GTZAN dataset is commonly used for benchmarking deep learning models for genre classification tasks. 
 
 ---
 
@@ -101,7 +101,7 @@ BeatNet extracts two complementary feature representations:
 
 ### MFCC (Mel-Frequency Cepstral Coefficients)
 
-MFCCs represent the **short-term power spectrum of sound** and are widely used in speech and audio processing because they approximate human auditory perception. ([Wikipedia][1])
+MFCCs represent the **short-term power spectrum of sound** and are widely used in speech and audio processing because they approximate human auditory perception.
 
 Libraries used:
 
