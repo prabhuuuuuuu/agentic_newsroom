@@ -115,8 +115,7 @@ The system supports **two modes** for featured images:
 **Recommended size**: 1200x630 pixels (blog header ratio)
 
 ## 🔄 How It Works
-<img width="1100" height="3485" alt="mermaid-1773339915101" src="https://github.com/user-attachments/assets/2217e993-98a6-4c01-b26a-e74b236e2748" />
-
+<img width="800" height="3485" alt="mermaid-1773339915101" src="https://github.com/user-attachments/assets/2217e993-98a6-4c01-b26a-e74b236e2748" />
 
 
 ## 🎯 Agents
