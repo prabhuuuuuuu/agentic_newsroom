@@ -1,17 +1,26 @@
 # requirements.txt
-# LangChain Core
-langchain-core>=0.3.0
-langchain-community>=0.3.0
-langchain-ollama>=0.2.0
 
-# LangGraph
-langgraph>=0.2.0
+# LangChain ecosystem for agent orchestration
+langchain>=0.1.0
+langchain-community>=0.0.10
+langchain-ollama>=0.1.0
+langgraph>=0.0.20
 
-# Tools
+# Local LLM provider
+ollama>=0.1.0
+
+# Search tool
 tavily-python>=0.3.0
+
+# UI Framework
+streamlit>=1.30.0
+
+# Image generation (local stable diffusion via ollama or API)
+pillow>=10.0.0
+requests>=2.31.0
+
+# Environment variables
 python-dotenv>=1.0.0
 
-# API & Server
-fastapi>=0.110.0
-uvicorn>=0.27.0
-pydantic>=2.0.0
+# Async support for parallel image generation
+asyncio>=3.4.3

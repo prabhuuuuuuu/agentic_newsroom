@@ -1,93 +1,152 @@
 # agents.py
 from langchain_ollama import ChatOllama
-from langchain_core.messages import HumanMessage, SystemMessage
-from state import GraphState
-from tools import search_tool, save_file  # ✅ Import individual tools
+from langchain_core.prompts import ChatPromptTemplate
+from tools import search_tool, generate_image_tool, save_file_tool
 
-# Initialize LLM
-llm = ChatOllama(
-    model="llama3",
-    temperature=0
-)
+# Initialize local LLM - runs on your machine, FREE!
+# temperature=0 makes output deterministic (same input = same output)
+llm = ChatOllama(model="llama3.2", temperature=0)
 
-def research_node(state: GraphState):
-    print("--RESEARCHER--")
+def researcher_node(state):
+    """
+    RESEARCHER AGENT
+    Searches web for sources on the topic.
+    """
     topic = state["topic"]
     
-    # ✅ Bind the correct tool (search_tool, not search_tools)
-    llm_with_tools = llm.bind_tools([search_tool])
+    # Call search tool
+    search_results = search_tool(topic)
     
-    messages = [
-        SystemMessage(content="You are a research assistant. Use the search tool to find information."),
-        HumanMessage(content=f"Research the following topic thoroughly: {topic}")
-    ]
-    
-    response = llm_with_tools.invoke(messages)
-    
-    research_notes = []
-    # ✅ Correct attribute: tool_calls (underscore, not dot)
-    if response.tool_calls:
-        for tool_call in response.tool_calls:
-            if tool_call['name'] == 'tavily_search_results':
-                result = search_tool.invoke(tool_call['args']['query'])
-                research_notes.append(result)
-    
-    return {"research_notes": research_notes}
+    # Return state updates (LangGraph merges these automatically)
+    return {
+        "research_notes": search_results,
+        "messages": [f"🔍 Researched: {topic} - Found {len(search_results)} sources"]
+    }
 
-def write_node(state: GraphState):
-    print("--WRITER--")
+def writer_node(state):
+    """
+    WRITER AGENT
+    Creates blog post draft from research notes.
+    Handles both initial draft and revisions.
+    """
     topic = state["topic"]
-    notes = state["research_notes"]
+    research_notes = state["research_notes"]
+    human_feedback = state.get("human_feedback", "")
     critique = state.get("critique", "")
+    revision_count = state["revision_count"]
     
-    system_prompt = """
-    You are a technical writer. 
-    Write a comprehensive blog post in GitHub Flavored Markdown.
-    Use the provided research notes to ensure factual accuracy.
-    """
+    # Combine research into context
+    context = "\n\n".join(research_notes)
     
-    user_prompt = f"""
-    Topic: {topic}
-    Research Notes: {notes}
-    """
+    # Build instruction based on whether this is a revision
+    if human_feedback or critique:
+        instruction = f"""
+        REVISE the draft based on:
+        - Critic feedback: {critique}
+        - Human editor feedback: {human_feedback}
+        - This is revision #{revision_count + 1}
+        """
+    else:
+        instruction = "Write a comprehensive technical blog post from scratch."
     
-    if critique:
-        user_prompt += f"\nPrevious Critique: {critique}"
+    # Create prompt template
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", """You are a technical writer. Write in GitHub Flavored Markdown.
+        Include: Title (H1), Introduction, Main Sections (H2), Code Examples, Conclusion.
+        Be factual and cite sources from research notes."""),
+        ("human", """Topic: {topic}
+        Research Notes: {context}
+        Instruction: {instruction}
+        """)
+    ])
     
-    messages = [
-        SystemMessage(content=system_prompt),
-        HumanMessage(content=user_prompt)
-    ]
+    # Generate draft using LLM
+    response = llm.invoke(prompt.format(
+        topic=topic, 
+        context=context, 
+        instruction=instruction
+    ))
     
-    response = llm.invoke(messages)
+    # Create image prompt for this topic
+    image_prompt = f"Technical illustration for blog post about {topic}, minimalist, professional, blue and white"
     
-    # ✅ No extra space in key ("draft" not "draft ")
-    return {"draft": response.content}
+    return {
+        "draft": response.content,
+        "image_prompt": image_prompt,
+        "revision_count": revision_count + 1,
+        "messages": [f"✍️ Draft written (Revision {revision_count + 1})"]
+    }
 
-def critique_node(state: GraphState):  # ✅ Function name is critique_node
-    print("--CRITIC--")
-    draft = state["draft"]
-    
-    system_prompt = """
-    You are a harsh technical editor. 
-    Evaluate the draft for factual depth, clarity, and formatting.
-    If the draft is good, return 'APPROVED'.
-    If not, provide specific critiques.
+def critic_node(state):
     """
-    
-    messages = [
-        SystemMessage(content=system_prompt),
-        HumanMessage(content=f"Review this draft: \n{draft}")
-    ]
-    
-    response = llm.invoke(messages)
-    
-    return {"critique": response.content}
-
-def publish_node(state: GraphState):
-    print("--PUBLISHER--")
+    CRITIC AGENT
+    Evaluates draft quality. Provides harsh, constructive feedback.
+    """
     draft = state["draft"]
-    result = save_file.invoke({"content": draft})
-    print(result)
+    research_notes = state["research_notes"]
     
-    return {}
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", """You are a harsh technical editor. Evaluate:
+        1. Factual accuracy (cross-reference with research notes)
+        2. Depth of content
+        3. Markdown formatting
+        4. Code example quality
+        
+        If draft is EXCELLENT, respond exactly: 'APPROVED'
+        Otherwise, provide specific critique with sections to improve."""),
+        ("human", """Draft: {draft}
+        Research Notes: {research_notes}
+        """)
+    ])
+    
+    response = llm.invoke(prompt.format(
+        draft=draft, 
+        research_notes="\n".join(research_notes)
+    ))
+    
+    # Check if approved or needs revision
+    approval = "approved" if "APPROVED" in response.content.upper() else "needs_revision"
+    
+    return {
+        "critique": response.content,
+        "approval_status": approval,
+        "messages": [f"📝 Critic review: {approval}"]
+    }
+
+def image_generator_node(state):
+    """
+    IMAGE GENERATOR AGENT
+    Creates featured image using Stability AI.
+    """
+    image_prompt = state["image_prompt"]
+    
+    # Call image generation tool
+    image_path = generate_image_tool(image_prompt)
+    
+    return {
+        "image_path": image_path,
+        "messages": [f"🖼️ Image generated: {image_path}"]
+    }
+
+def publisher_node(state):
+    """
+    PUBLISHER AGENT
+    Saves final draft and image to output folder.
+    """
+    draft = state["draft"]
+    image_path = state.get("image_path", "")
+    topic = state["topic"]
+    
+    # Create safe filename from topic
+    filename = f"{topic.replace(' ', '_')[:30]}.md"
+    
+    # Add image reference to markdown if image exists
+    if image_path and "error" not in image_path:
+        draft = f"![Featured Image]({image_path})\n\n" + draft
+    
+    # Save file
+    save_file_tool(draft, filename)
+    
+    return {
+        "messages": [f"✅ Published: output/{filename}"]
+    }
