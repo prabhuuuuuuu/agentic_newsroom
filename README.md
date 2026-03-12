@@ -126,6 +126,9 @@ The system supports **two modes** for featured images:
 4. **Image Generator**: Creates featured image (optional)
 5. **Publisher**: Saves final post to `output/post.md`
 
+## Example output - 
+<img width="1988" height="1202" alt="Screenshot 2026-03-12 234940" src="https://github.com/user-attachments/assets/c44e19eb-2f13-47fa-b03d-3558b1e37bee" />
+
 
 ## 📄 License
 
